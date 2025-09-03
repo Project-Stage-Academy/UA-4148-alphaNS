@@ -30,13 +30,17 @@ class ConnectionManager:
         async with self._lock:
             conns = list(self.active.get(user_id, set()))
         delivered = 0
+
+        dead = []
         for ws in conns:
             try:
                 await ws.send_json(payload)
                 delivered += 1
             except Exception:
-                # Drop broken connection
-                await self.disconnect(user_id, ws)
+                dead.append(ws)
+        for ws in dead:
+            await self.disconnect(user_id, ws)
+
         return delivered
 
 
